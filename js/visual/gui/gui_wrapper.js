@@ -1,3 +1,4 @@
+
 let GuiWrapper = new function() {
 
     this.isOpen = false;
@@ -30,10 +31,6 @@ let GuiWrapper = new function() {
 
         $(document).mouseenter(() => {
             outsideWindow = false;
-        });
-
-        $("input:text, .ui.button", ".ui.action.input").on("click", function(e) {
-            $("input:file", $(e.target).parents()).click();
         });
 
         $("input:file", ".ui.action.input").on("change", function(e) {

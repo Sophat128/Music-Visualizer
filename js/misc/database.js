@@ -1,6 +1,3 @@
-
-//TODO: some serious organization/structure improvement
-
 let Database = new function () {
 
     let perPage = Math.floor(($(window).height() - 400) / 550 * 8);
@@ -35,8 +32,8 @@ let Database = new function () {
     let index;
 
     this.setUp = function () {
-        elmFile = document.getElementById("fileSelector");
-        elmBgFile = document.getElementById("bgImageSelector");
+        elmFile = document.getElementById("settingsAudioFileSelector");
+        elmBgFile = document.getElementById("settingsBgImageSelector");
         elmAdd = document.getElementById("add2DB");
         elmView = document.getElementById("viewDB");
         elmDeldb = document.getElementById("delDB");
@@ -169,8 +166,6 @@ let Database = new function () {
                 elmArtist.value = "Unknown Artist";
             }
             
-            // We no longer get the image from metadata, so we reset the background
-            // if no image has been manually selected via handleImageSelection.
             if (!imgStore) {
                 Background.resetBG();
             }
@@ -178,7 +173,7 @@ let Database = new function () {
             GuiWrapper.setTitle(tags.artist, tags.title);
         }, {
             dataReader: ID3.FileAPIReader(fileStore),
-            tags: ["artist", "title"] // We don't need the picture tag anymore
+            tags: ["artist", "title"] 
         });
 
         let promise = Nodes.playSongFromUrl(url);
@@ -196,7 +191,6 @@ let Database = new function () {
         let duration = Util.secondsToHms(elmAudio.duration);
 
         if (image === undefined) {
-             // Now we default to a placeholder if no image was uploaded
             image = "./img/art_ph.png";
         }
         
@@ -208,7 +202,6 @@ let Database = new function () {
 
         handleView(false);
         
-        // Clear the stored image after adding the song
         imgStore = undefined;
     }
 

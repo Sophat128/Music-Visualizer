@@ -17,6 +17,14 @@ let IoHandler = new function() {
     let dragCallbacks = Array();
 
     this.setUp = function() {
+        $("#upload-button").on("click", function() {
+            $("#settingsAudioFileSelector").click();
+        });
+
+        $("#upload-bg-button").on("click", function() {
+            $("#settingsBgImageSelector").click();
+        });
+
         $("#db-view").on("click", ".row-title", function() {
             if ($(this).find("input").length == 0) {
                 GuiWrapper.toggleTextField($(this));
