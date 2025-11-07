@@ -1,147 +1,183 @@
-let Background = new function() {
-    const WHITELISTED_DOMAINS = ["i.imgur.com", "i.redd.it", "i.reddituploads.com"];
+let Background = (function() {
+
+    const BG_CHANGE_TIME = 2000;
+
+    let bgElement1, bgElement2, lowResElement1, lowResElement2;
+    let currentBg = 1;
+    let bgTimer;
+    let customBg = false;
 
     let staticUrls = [
-        "u9muu7r", "elUmrNS", "TcA4IsQ", "PaMnxZn", "P7hwlaN", 
-        "I5O4QWi", "fT4bxpb", "U7Bx7FQ", "Qujelxk", "KAHqXM2", 
-        "laGeYSO", "HdsWnkU", "xEanEAB", "NG3moRJ", "31E8sfB",  
-        "XGiYXHs", "QBAbrBJ", "uclwgUc", "koPzyZ1", "8VfPY96"  
+        "Wo92x3p", "n5nUa5Q", "oB5y82s", "Vj8sA0Y", "WBh1i5F", "fWfVz7w",
+        "8i3nJ56", "4rR62o7", "rgrgSjY", "z3d3bso", "JGIkYpA", "Jv2mvfS"
     ];
 
-    let redditData;
-    
-    this.loadBackground = function() {
-        if (!Config.drawBackground) {
-            return;
-        }
+    let setBackground = function(fullRes, lowRes) {
+        // console.log("image: ", fullRes)
+        // Reset opacity and display for the fade-in effect
+        bgElement1.style.opacity = 0;
+        bgElement2.style.opacity = 0;
+        bgElement1.style.display = "";
+        bgElement2.style.display = "";
 
-        if (Config.forceImgurBackground) {
-            loadImgurBackground(false);
-            return;
-        }
-        if (Config.forceStaticBackground) {
-            loadStaticBackground();
-            return;
-        }
+        lowResElement1.style.display = "";
+        lowResElement2.style.display = "";
 
-        this.loadRedditBackground();
-    }
+        // Set sources
+        bgElement1.src = fullRes;
+        bgElement2.src = fullRes; // Both img tags get the same source
 
-    this.loadRedditBackground = function(allowFallback = true) {
-        $.ajax({
-            url: "https://www.reddit.com/r/" + Config.backgroundSubreddit + "/.json",
-            method: "GET",
-            success: handleRedditData,
-            error: allowFallback ? handleRedditFail : null
-        });
-    }
-    
-    let handleRedditData = function(result) {
-        let posts = result.data.children;
-        Util.shuffle(posts);
-        let post;
-        let found = false;
-        for (let i = 0; i < posts.length; i++) {
-            post = posts[i];
-            if (WHITELISTED_DOMAINS.indexOf(post.data.domain) != -1
-                    && post.data.preview.images[0].source.width >= 2560) {
-                found = true;
-                break;
+        // console.log("bgElement1: ", bgElement1.src)
+        // console.log("bgElement2: ", bgElement2.src)
+
+
+        if (lowRes) {
+            lowResElement1.src = lowRes;
+            lowResElement2.src = lowRes;
+        } else {
+            lowResElement1.src = fullRes;
+            lowResElement2.src = fullRes;
+        }
+    };
+
+    let loadRedditBackground = function() {
+        let handleRedditData = function(data) {
+            if (customBg) return;
+            if (!data.data || !data.data.children || data.data.children.length < 1) {
+                return handleRedditFail();
             }
+
+            let posts = data.data.children.filter(p => p.kind == "t3" && p.data.post_hint == "image" && !p.data.is_video);
+            if (posts.length < 1) {
+                return handleRedditFail();
+            }
+            let post = posts[Math.floor(Math.random() * posts.length)];
+            let smol = post.data.preview.images[0].resolutions[1].url.replaceAll("&amp;", "&");
+            let full = post.data.url.replaceAll("&amp;", "&");
+
+            setBackground(full, smol);
         }
 
-        if (!found) {
-            console.error("Reddit has failed to offer an image satisfactory to the client; falling back to Imgur.");
+        let handleRedditFail = function() {
+            console.error("Reddit API failed; falling back to Imgur...");
             loadImgurBackground();
         }
 
-        let smol = post.data.preview.images[0].resolutions[1].url.replaceAll("&amp;", "&");
-        let full = post.data.url.replaceAll("&amp;", "&");
-        setBackground(full, smol);
-    }
-
-    let handleRedditFail = function() {
-        console.error("The client doesn't want to talk to the Reddit API today. Falling back to Imgur...");
-        loadImgurBackground();
-    }
+        $.ajax({
+            url: `https://www.reddit.com/r/${Config.backgroundSubreddit.toLowerCase()}/hot.json`,
+            method: "GET",
+            success: handleRedditData,
+            error: handleRedditFail
+        });
+    };
 
     let loadImgurBackground = function(allowFallback = true) {
+        let handleImgurData = function(data) {
+            if (customBg) return;
+            if (!data.data || data.data.length < 1) {
+                return allowFallback ? handleImgurFail() : null;
+            }
+
+            let posts = data.data.filter(p => !p.in_most_viral && !p.animated && p.type == "image/jpeg");
+            if (posts.length < 1) {
+                return allowFallback ? handleImgurFail() : null;
+            }
+
+            let post = posts[Math.floor(Math.random() * posts.length)];
+            setBackground(post.link, post.link.replace(".jpg", "m.jpg"));
+        }
+
+        let handleImgurFail = function() {
+            console.error("Imgur API failed; falling back to static background...");
+            loadStaticBackground();
+        }
+
         $.ajax({
-            url: "https://api.imgur.com/3/gallery/r/" + Config.backgroundSubreddit.toLowerCase() + "/0",
+            url: `https://api.imgur.com/3/gallery/r/${Config.backgroundSubreddit.toLowerCase()}/0`,
             method: "GET",
             headers: {
                 Authorization: "Client-ID 0428dcb72fbc5da",
                 Accept: "application/json"
             },
-            data: {
-                image: localStorage.dataBase64,
-                type: "base64"
-            },
             success: handleImgurData,
             error: allowFallback ? handleImgurFail : null
         });
-    }
-    
-    let handleImgurData = function(result) {
-        let posts = result.data;
-        Util.shuffle(posts);
-        let post;
-        let found = false;
-        for (let i = 0; i < posts.length; i++) {
-            post = posts[i];
-            if (post.width >= 2560) {
-                found = true;
-                break;
-            }
-        }
+    };
 
-        if (!found) {
-            console.error("Imgur has failed to offer an image satisfactory to the client; falling back to static "
-                    + "background.");
-            loadImgurBackground();
-        }
-
-        let id = result.data[Math.floor(Math.random() * result.data.length)].id;
-        setBackground("http://i.imgur.com/" + id + ".jpg", "http://i.imgur.com/" + id + "m.jpg");
-    }
-
-    let handleImgurFail = function() {
-        console.error("The client doesn't want to talk to the Imgur API; falling back to static background.");
-        loadStaticBackground();
-    }
-    
     let loadStaticBackground = function() {
         let id = staticUrls[Math.floor(Math.random() * staticUrls.length)];
-        setBackground("http://i.imgur.com/" + id + ".jpg", "http://i.imgur.com/" + id + "m.jpg");
-    }
+        setBackground(`http://i.imgur.com/${id}.jpg`, `http://i.imgur.com/${id}m.jpg`);
+    };
 
-    let setBackground = function(fullRes, lowRes) {
-        document.getElementById("bgimg1").style.display = "";
-        document.getElementById("bgimg2").style.display = "";
-        document.getElementById("limg1").style.display = "";
-        document.getElementById("limg2").style.display = "";
+    // Public methods
+    let publicApi = {};
 
-        document.getElementById("bgimg1").src = fullRes;
-        document.getElementById("bgimg2").src = fullRes;
-        if (lowRes !== undefined) {
-            document.getElementById("limg1").src = lowRes;
-            document.getElementById("limg2").src = lowRes;
+    publicApi.setUp = function() {
+        bgElement1 = document.getElementById("bgimg1");
+        bgElement2 = document.getElementById("bgimg2");
+        lowResElement1 = document.getElementById("limg1");
+        lowResElement2 = document.getElementById("limg2");
+
+        if (!Config.forceStaticBackground) {
+            bgTimer = setInterval(() => {
+                if (!customBg) {
+                     if (Config.forceImgurBackground) {
+                        loadImgurBackground(true);
+                    } else {
+                        loadRedditBackground();
+                    }
+                }
+            }, 60 * 1000);
         }
-    }
-    
-    this.flipImage = function() {
-        $(".bgleft, .bgright").toggleClass("bgright bgleft");
-    }
-    
-    this.fadeFullRes = function(element) {
-        $("#" + element.id).css({"opacity": 1, "filter": "none"});
-    }
+    };
 
-    this.resetBG = function() {
-        document.getElementById("bgimg1").src = "";
-        document.getElementById("bgimg2").src = "";
-        document.getElementById("limg1").src = "";
-        document.getElementById("limg2").src = "";
-    }
-    
-}
+    publicApi.loadInitial = function() {
+        publicApi.resetBG();
+    };
+
+    publicApi.setCustomBackground = function(imageData) {
+        console.log("cutom image")
+        customBg = true;
+        setBackground(imageData);
+    };
+
+    publicApi.resetBG = function() {
+        customBg = false;
+        if (Config.forceStaticBackground) {
+            loadStaticBackground();
+        } else if (Config.forceImgurBackground) {
+            loadImgurBackground(false);
+        } else {
+            loadRedditBackground();
+        }
+    };
+
+    publicApi.flipImage = function() {
+        let current = currentBg == 1 ? bgElement1 : bgElement2;
+        let other = currentBg == 1 ? bgElement2 : bgElement1;
+
+        let currentLow = currentBg == 1 ? lowResElement1 : lowResElement2;
+        let otherLow = currentBg == 1 ? lowResElement2 : lowResElement1;
+
+        other.style.zIndex = 2;
+        current.style.zIndex = 1;
+        otherLow.style.zIndex = 2;
+        currentLow.style.zIndex = 1;
+
+        other.style.opacity = 1;
+        otherLow.style.opacity = 1;
+
+        currentBg = currentBg == 1 ? 2 : 1;
+
+        setTimeout(() => {
+            current.style.opacity = 0;
+            currentLow.style.opacity = 0;
+        }, BG_CHANGE_TIME);
+    };
+
+    publicApi.fadeFullRes = function(element) {
+        $(element).animate({ opacity: 1 }, BG_CHANGE_TIME);
+    };
+
+    return publicApi;
+})();

@@ -1,3 +1,4 @@
+
 //TODO: some serious organization/structure improvement
 
 let Database = new function () {
@@ -6,6 +7,7 @@ let Database = new function () {
 
     // Listen Elements
     let elmFile;
+    let elmBgFile;
     let elmAdd = document.getElementById("add2DB");
     let elmView = document.getElementById("viewDB");
     let elmDeldb = document.getElementById("delDB");
@@ -33,7 +35,8 @@ let Database = new function () {
     let index;
 
     this.setUp = function () {
-        elmFile = document.getElementById("fileSelector")
+        elmFile = document.getElementById("fileSelector");
+        elmBgFile = document.getElementById("bgImageSelector");
         elmAdd = document.getElementById("add2DB");
         elmView = document.getElementById("viewDB");
         elmDeldb = document.getElementById("delDB");
@@ -43,10 +46,11 @@ let Database = new function () {
         elmImage1 = document.getElementById("bgimg1");
         elmImage2 = document.getElementById("bgimg2");
         elmAudio = document.getElementById("audio");
-        elmTable = document.getElementById("display");
+        elmTable = document.getElementById("db-view");
 
         // button Listeners
         elmFile.addEventListener("change", handleFileSelection, false);
+        elmBgFile.addEventListener("change", handleImageSelection, false);
         elmAdd.addEventListener("click", addSong, false);
         elmView.addEventListener("click", handleRefresh, false);
         elmDeldb.addEventListener("click", handleDeleteDB, false);
@@ -73,7 +77,6 @@ let Database = new function () {
                 $("#welcome-full").css("display", "block");
                 GuiWrapper.welcomeOpen = true;
                 Background.resetBG();
-                Background.loadRedditBackground();
             }
 
         });
@@ -122,13 +125,26 @@ let Database = new function () {
         }
         db.delete();
         handleView(false);
-        alert("Database deleted. (You'll need to refresh the page.)");
+        alert("Database deleted. (You\'ll need to refresh the page.)");
+    }
+
+    let handleImageSelection = function (e) {
+        let file = e.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        let reader = new FileReader();
+        reader.onload = function (event) {
+            imgStore = event.target.result;
+            Background.setCustomBackground(imgStore);
+        };
+        reader.readAsDataURL(file);
     }
 
 
     let handleFileSelection = function (e) {
         //reset globals
-        imgStore = undefined;
         fileStore = e.target.files[0];
 
         let url;
@@ -141,36 +157,28 @@ let Database = new function () {
         ID3.loadTags(url, () => {
             let tags = ID3.getAllTags(url);
 
-            if (tags.picture !== undefined) {
-                // Convert picture to base64
-                let image = tags.picture;
-                let base64String = "";
-
-                for (let i = 0; i < image.data.length; i++) {
-                    base64String += String.fromCharCode(image.data[i]);
-                }
-
-                imgStore = "data:" + image.format + ";base64," + window.btoa(base64String);
-            }
-
             if (tags.title !== undefined) {
                 elmTitle.value = tags.title;
             } else {
-                elmTitle.value = "";
+                elmTitle.value = fileStore.name.replace(/\.[^/.]+$/, ""); // Use filename as title
             }
 
             if (tags.artist !== undefined) {
                 elmArtist.value = tags.artist;
             } else {
-                elmArtist.value = "";
+                elmArtist.value = "Unknown Artist";
+            }
+            
+            // We no longer get the image from metadata, so we reset the background
+            // if no image has been manually selected via handleImageSelection.
+            if (!imgStore) {
+                Background.resetBG();
             }
 
-            Background.resetBG();
-            Background.loadRedditBackground();
             GuiWrapper.setTitle(tags.artist, tags.title);
         }, {
             dataReader: ID3.FileAPIReader(fileStore),
-            tags: ["artist", "title", "picture"]
+            tags: ["artist", "title"] // We don't need the picture tag anymore
         });
 
         let promise = Nodes.playSongFromUrl(url);
@@ -188,40 +196,20 @@ let Database = new function () {
         let duration = Util.secondsToHms(elmAudio.duration);
 
         if (image === undefined) {
-            $.ajax({
-                url: "https://itunes.apple.com/search?term=" + artist + " " + title,
-                dataType: 'jsonp'
-            }).done(function (data) {
-                console.log("No ID3 artwork found; attempting iTunes search.");
-
-                let itunesStr;
-
-                if (data.results[0] == undefined) {
-                    itunesStr = "./img/art_ph.png";
-                } else {
-                    itunesStr = JSON.stringify(data.results[0].artworkUrl100);
-                    itunesStr = itunesStr.replace(/\"/g, "");
-                }
-
-                db.id3.add({ artist: artist, title: title, duration: duration, img: itunesStr, audio: fileStore });
-
-                order[totalCount] = totalCount;
-                index = totalCount;
-                totalCount++;
-
-                handleView(false);
-            })
-        } else {
-
-            db.id3.add({ artist: artist, title: title, duration: duration, img: image, audio: fileStore });
-
-            order[totalCount] = totalCount;
-            index = totalCount;
-            totalCount++;
-
-            handleView(false);
+             // Now we default to a placeholder if no image was uploaded
+            image = "./img/art_ph.png";
         }
+        
+        db.id3.add({ artist: artist, title: title, duration: duration, img: image, audio: fileStore });
 
+        order[totalCount] = totalCount;
+        index = totalCount;
+        totalCount++;
+
+        handleView(false);
+        
+        // Clear the stored image after adding the song
+        imgStore = undefined;
     }
 
     let handleRefresh = function () {
@@ -271,9 +259,8 @@ let Database = new function () {
 
         db.id3.where("id").equals(i).each(result => {
             let subPromise = Nodes.playSongFromUrl(URL.createObjectURL(result.audio));
-            Background.resetBG();
-            Background.loadRedditBackground();
-
+            Background.setCustomBackground(result.img);
+            GuiWrapper.setTitle(result.artist, result.title);
             promiseArr[0].resolve(subPromise);
         });
 
@@ -325,8 +312,11 @@ let Database = new function () {
             promiseArr.push({ resolve: resolve, reject: reject });
         });
 
+        // This could be more efficient
         db.id3.toArray().then(arr => {
-            promiseArr[0].resolve(this.handlePlay(arr[order[index]].id));
+             if(arr.length > 0 && order[index] < arr.length){
+                promiseArr[0].resolve(this.handlePlay(arr[order[index]].id));
+            }
         });
 
         return promise;

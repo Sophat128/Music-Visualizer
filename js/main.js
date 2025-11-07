@@ -8,6 +8,7 @@ let Main = new function() {
 
         Nodes.setUp();
 
+        Background.setUp();
         Database.setUp();
         GuiWrapper.setUp();
 
@@ -21,6 +22,8 @@ let Main = new function() {
         Renderer.setUp();
 
         AudioWrap.setUp();
+
+        Background.loadInitial();
     }
 
     this.resizeCallback = function() {

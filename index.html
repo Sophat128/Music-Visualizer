@@ -75,13 +75,6 @@
                 </div>
                 <div class="settings-content">
                     <div class="tab-content active" data-tab="overview">
-                        <div class="ui fluid action input inverted">
-                            <input type="text" readonly Value="Select Audio File">
-                            <input accept="audio/*" type="file" id="fileSelector">
-                            <div id="upload-button" class="ui icon button interactable">
-                                <span class="fa fa-plus"></span>
-                            </div>
-                        </div>
                         <table class="ui selectable inverted table" id="db-view" border="1"></table>
                         <div id="db-page-info"></div>
                         <div id="db-input">
@@ -99,8 +92,21 @@
                         </div>
                     </div>
                     <div class="tab-content" data-tab="settings" style="display: none;">
-                        <h2>Settings</h2>
-                        <p>Here are some settings.</p>
+                        <h2>Song and Background</h2>
+                        <div class="ui fluid action input inverted">
+                            <input type="text" readonly Value="Select Audio File">
+                            <input accept="audio/*" type="file" id="fileSelector">
+                            <div id="upload-button" class="ui icon button interactable">
+                                <span class="fa fa-plus"></span>
+                            </div>
+                        </div>
+                        <div class="ui fluid action input inverted" style="margin-top: 10px;">
+                            <input type="text" readonly Value="Select Background Image">
+                            <input accept="image/*" type="file" id="bgImageSelector">
+                            <div id="upload-bg-button" class="ui icon button interactable">
+                                <span class="fa fa-plus"></span>
+                            </div>
+                        </div>
                     </div>
                     <div class="tab-content" data-tab="export" style="display: none;">
                         <h2>Export</h2>
