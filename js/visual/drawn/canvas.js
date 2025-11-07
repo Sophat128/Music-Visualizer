@@ -34,7 +34,8 @@ let Canvas = new function() {
     }
 
     this.setStyling = function() {
-        // Let CSS handle styling
+        this.canvas.width = this.canvas.clientWidth;
+        this.canvas.height = this.canvas.clientHeight;
 
         this.context.fillStyle = "#FFFFFF";
 

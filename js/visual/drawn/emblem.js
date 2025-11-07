@@ -4,11 +4,7 @@ let Emblem = new function() {
     let loaded = false;
     let currentRadius;
 
-    let jqWindow;
-
     this.setUp = function() {
-        jqWindow = $(".visual-preview");
-
         image = new Image();
         image.onload = () => loaded = true;
         image.src = "./img/emblem.svg";
@@ -26,8 +22,11 @@ let Emblem = new function() {
         }
 
         currentRadius = Emblem.calcRadius(multiplier);
-        let xOffset = jqWindow.width() / 2 - currentRadius;
-        let yOffset = jqWindow.height() / 2 - currentRadius;
+
+        // Center the emblem based on the canvas dimensions, not the container div
+        let xOffset = Canvas.canvas.width / 2 - currentRadius;
+        let yOffset = Canvas.canvas.height / 2 - currentRadius;
+
         Canvas.context.save();
         Canvas.context.fillStyle = "#000000";
         let dimension = currentRadius * 2;
