@@ -7,7 +7,7 @@ let Emblem = new function() {
     let jqWindow;
 
     this.setUp = function() {
-        jqWindow = $(window);
+        jqWindow = $(".visual-preview");
 
         image = new Image();
         image.onload = () => loaded = true;

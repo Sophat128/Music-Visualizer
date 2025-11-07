@@ -6,25 +6,38 @@ let Renderer = new function() {
     let renderer;
 
     this.setUp = function() {
-        renderer = new THREE.WebGLRenderer({alpha: true})
-        renderer.setSize($(document).width(), $(document).height());
+        renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.domElement.id = "canvas-gl";
         $("#content").append(renderer.domElement);
+
+        let self = this;
+        $(window).on('resize', function() {
+            self.updateSize();
+        });
+
         this.updateSize();
         requestAnimationFrame(render);
     }
 
     let render = function() {
+        requestAnimationFrame(render);
+
         if (!Config.drawParticles) {
             return;
         }
 
-        requestAnimationFrame(render);
         renderer.render(Scene.glScene, Scene.glCamera);
     }
 
     this.updateSize = function() {
-        renderer.setSize($(document).width(), $(document).height());
+        let width = $('.visual-preview').width();
+        let height = $('.visual-preview').height();
+
+        renderer.setSize(width, height);
+
+        // Update camera aspect ratio to avoid distortion
+        Scene.glCamera.aspect = width / height;
+        Scene.glCamera.updateProjectionMatrix();
     }
 
-}
+};

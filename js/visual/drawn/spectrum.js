@@ -8,7 +8,7 @@ let Spectrum = new function() {
 
     this.setUp = function() {
         Callbacks.addCallback(drawCallback, Priority.EARLY);
-        jqWindow = $(window);
+        jqWindow = $(".visual-preview");
     }
 
     let drawCallback = function(spectrum, multiplier) {

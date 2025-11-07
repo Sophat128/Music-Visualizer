@@ -13,15 +13,15 @@ body {
 
 #content {
     z-index: 2;
-    position: fixed;
-    left: 0;
-    top: 0;
+    position: relative;
 }
 
 #canvas, #canvas-gl {
     width: 100%;
     height: 100%;
-    position: fixed;
+    position: absolute;
+    left: 0;
+    top: 0;
 }
 
 #canvas {

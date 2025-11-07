@@ -4,6 +4,7 @@ let Canvas = new function() {
     this.context;
 
     const WAVE_DURATION = Math.PI / 8;
+
     let waveFrameX = 0;
     let waveFrameY = 0;
     let waveSpeedX = 1;
@@ -14,12 +15,16 @@ let Canvas = new function() {
     let trigY = Math.round(Math.random());
 
     let glow = Util.getCookie("glow") !== "false";
-
     let edge = window.navigator.userAgent.indexOf("Edge") > -1;
 
     this.setUp = function() {
-        this.canvas = $("#canvas").get()[0]
-        this.context = canvas.getContext("2d");
+        this.canvas = $("#canvas").get()[0];
+        this.context = this.canvas.getContext("2d");
+
+        let self = this;
+        $(window).on('resize', function() {
+            self.setStyling();
+        });
 
         this.setStyling();
 
@@ -27,12 +32,16 @@ let Canvas = new function() {
         Callbacks.addCallback(shakeCallback, Priority.FIRST);
         Callbacks.addCallback(postCallback, Priority.LAST);
     }
-    
+
     this.setStyling = function() {
-        $("#canvas").attr("width", $(window).width());
-        $("#canvas").attr("height", $(window).height());
-        Canvas.context.fillStyle = "#FFFFFF";
-        Canvas.context.shadowBlur = glow && !edge ? Config.glowRadius * Util.getResolutionMultiplier() : 0;
+        // Let CSS handle styling
+
+        this.context.fillStyle = "#FFFFFF";
+
+        this.context.shadowBlur =
+            glow && !edge
+                ? Config.glowRadius * Util.getResolutionMultiplier()
+                : 0;
     }
 
     this.toggleGlow = function() {
@@ -49,6 +58,7 @@ let Canvas = new function() {
         Canvas.context.save();
 
         let step = Config.maxShakeIntensity * multiplier;
+
         waveFrameX += step * waveSpeedX;
         if (waveFrameX > WAVE_DURATION) {
             waveFrameX = 0;
@@ -56,6 +66,7 @@ let Canvas = new function() {
             waveSpeedX = Util.random(Config.minShakeScalar, Config.maxShakeScalar) * (Math.random() < 0.5 ? -1 : 1);
             trigX = Math.round(Math.random());
         }
+
         waveFrameY += step * waveSpeedY;
         if (waveFrameY > WAVE_DURATION) {
             waveFrameY = 0;
@@ -64,8 +75,8 @@ let Canvas = new function() {
             trigY = Math.round(Math.random());
         }
 
-        let trigFuncX = trigX == 0 ? Math.cos : Math.sin;
-        let trigFuncY = trigY == 0 ? Math.cos : Math.sin;
+        let trigFuncX = (trigX === 0 ? Math.cos : Math.sin);
+        let trigFuncY = (trigY === 0 ? Math.cos : Math.sin);
 
         let dx = trigFuncX(waveFrameX) * Config.maxShakeDisplacement * waveAmplitudeX * multiplier;
         let dy = trigFuncY(waveFrameY) * Config.maxShakeDisplacement * waveAmplitudeY * multiplier;
@@ -77,4 +88,4 @@ let Canvas = new function() {
         Canvas.context.restore();
     }
 
-}
+};

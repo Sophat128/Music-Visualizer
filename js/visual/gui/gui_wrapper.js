@@ -14,7 +14,6 @@ let GuiWrapper = new function() {
         $(document).mousemove(() => {
             clearInterval(timer);
             $("#gui-top").fadeIn(Config.guiFadeTime);
-            $("#gui-bottom").fadeIn(Config.guiFadeTime);
             $("body").css("cursor", "auto");
 
             if (!this.keepGui && !Config.keepGui && ($('.gui-part:hover').length == 0 || outsideWindow)) {
@@ -45,7 +44,6 @@ let GuiWrapper = new function() {
 
     let hideOverlay = function() {
         $("#gui-top").fadeOut(Config.guiFadeTime);   
-        $("#gui-bottom").fadeOut(Config.guiFadeTime);
         $("body").css("cursor", "none");
     }
 

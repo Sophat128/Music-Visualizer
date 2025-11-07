@@ -1,0 +1,142 @@
+body {
+    background-color: #1a1a1a !important;
+    color: #fff;
+    margin: 0;
+    font-family: "Open Sans", Helvetica, Verdana, sans-serif !important;
+    overflow: hidden;
+}
+
+.main-container {
+    display: flex;
+    height: 100vh;
+    padding: 20px;
+    gap: 20px;
+    box-sizing: border-box;
+}
+
+.settings-panel {
+    width: 500px;
+    background-color: #2a2a2a;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+}
+
+.tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #444;
+}
+
+.tab {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    text-transform: uppercase;
+}
+
+.tab.active {
+    border-bottom: 2px solid #3498DB;
+}
+
+.settings-content {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.visualizer-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    justify-content: center;
+}
+
+.aspect-ratio-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+}
+
+.visual-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #444;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+#content {
+    width: 100%;
+    height: 100%;
+}
+
+.video-control {
+    height: 100px;
+    background-color: #111;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+/* Overrides */
+#gui-full, #about-full, #welcome-full, #welcome-noauto-container, #gui-top {
+    display: none !important;
+}
+
+#gui-bottom {
+    position: static;
+    background-color: transparent !important;
+    height: auto;
+    justify-content: normal;
+}
+
+.settings-content .ui.input > input, .settings-content .ui.button {
+    background-color: #333 !important;
+    color: #fff !important;
+}
+
+.visual-preview .lazyaf, .visual-preview .realbg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.visual-preview .bgleft, .visual-preview .bgright {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 50%;
+}
+
+.visual-preview .bgleft {
+    left: 0;
+}
+
+.visual-preview .bgright {
+    right: 0;
+}
+
+.visual-preview .bgright img {
+    transform: scaleX(-1);
+}
+
+.visual-preview .realbg > img {
+    opacity: 0;
+}
+
+.visual-preview .lazyaf > img {
+    -webkit-filter: blur(10px);
+    filter: blur(10px);
+    transform: scale(1.02);
+}
