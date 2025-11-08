@@ -58,9 +58,20 @@ let Nodes = new function () {
                 context.resume().then(() => console.log('resumed')).catch(() => console.log('cannot resume'));
             }
 
-            $("#audio").attr("src", song != null ? "./songs/" + song.getFileId() : url);
-            let promise = $("#audio")[0].play();
+            let audio = $("#audio")[0];
+            audio.pause();
+            audio.src = song != null ? "./songs/" + song.getFileId() : url;
             
+            let promise = audio.play();
+
+            if (promise !== undefined) {
+                promise.catch(error => {
+                    if (error.name !== 'AbortError') { 
+                        console.error('Playback failed:', error);
+                    }
+                });
+            }
+
             if (url == null) {
                 GuiWrapper.setTitle(song.getArtist(), song.getTitle());
             }

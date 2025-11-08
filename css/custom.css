@@ -118,23 +118,15 @@ body {
     left: 0;
 }
 
-.visual-preview .bgleft, .visual-preview .bgright {
+.visual-preview .bgleft {
     position: absolute;
     top: 0;
     height: 100%;
-    width: 50%;
-}
-
-.visual-preview .bgleft {
-    left: 0;
+    width: 100%;
 }
 
 .visual-preview .bgright {
-    right: 0;
-}
-
-.visual-preview .bgright img {
-    transform: scaleX(-1);
+    display: none;
 }
 
 .visual-preview .realbg > img {
@@ -145,4 +137,8 @@ body {
     -webkit-filter: blur(10px);
     filter: blur(10px);
     transform: scale(1.02);
+}
+
+.fa {
+    padding: 10px;
 }

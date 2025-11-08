@@ -69,12 +69,36 @@
         <div class="main-container">
             <div class="settings-panel">
                 <div class="tabs">
-                    <div class="tab active" data-tab="overview">overview</div>
-                    <div class="tab" data-tab="settings">settings</div>
-                    <div class="tab" data-tab="export">export</div>
+                    <div class="tab active" data-tab="upload">Upload</div>
+                    <div class="tab" data-tab="library">Library</div>
+                    <div class="tab" data-tab="export">Export</div>
                 </div>
                 <div class="settings-content">
-                    <div class="tab-content active" data-tab="overview">
+                    <div class="tab-content active" data-tab="upload">
+                        <h2>Song, Background and Emblem</h2>
+                        <div class="ui fluid action input inverted">
+                            <input type="text" readonly value="Select Audio File">
+                            <input accept="audio/*" type="file" id="settingsAudioFileSelector" style="display:none">
+                            <label for="settingsAudioFileSelector" class="ui icon button interactable">
+                                <i class="fa fa-music"></i> Audio
+                            </label>
+                        </div>
+                        <div class="ui fluid action input inverted" style="margin-top: 10px;">
+                            <input type="text" readonly value="Select Background Image">
+                            <input accept="image/*" type="file" id="settingsBgImageSelector" style="display:none">
+                            <label for="settingsBgImageSelector" class="ui icon button interactable">
+                                <i class="fa fa-picture-o"></i> Background
+                            </label>
+                        </div>
+                        <div class="ui fluid action input inverted" style="margin-top: 10px;">
+                            <input type="text" readonly value="Select Emblem Image">
+                            <input accept="image/*" type="file" id="settingsEmblemImageSelector" style="display:none">
+                            <label for="settingsEmblemImageSelector" class="ui icon button interactable">
+                                <i class="fa fa-star"></i> Emblem
+                            </label>
+                        </div>
+                    </div>
+                    <div class="tab-content" data-tab="library" style="display: none;">
                         <table class="ui selectable inverted table" id="db-view" border="1"></table>
                         <div id="db-page-info"></div>
                         <div id="db-input">
@@ -89,23 +113,6 @@
                             <button class="ui button interactable" id="add2DB">Add To Library</button>
                             <button class="ui button interactable" id="viewDB">Refresh Library</button>
                             <button class="ui button interactable" id="delDB">Delete Library</button>
-                        </div>
-                    </div>
-                    <div class="tab-content" data-tab="settings" style="display: none;">
-                        <h2>Song and Background</h2>
-                        <div class="ui fluid action input inverted">
-                            <input type="text" readonly value="Select Audio File">
-                            <input accept="audio/*" type="file" id="settingsAudioFileSelector" style="display:none">
-                            <div id="upload-button" class="ui icon button interactable">
-                                <i class="fa fa-plus"></i>
-                            </div>
-                        </div>
-                        <div class="ui fluid action input inverted" style="margin-top: 10px;">
-                            <input type="text" readonly value="Select Background Image">
-                            <input accept="image/*" type="file" id="settingsBgImageSelector" style="display:none">
-                            <div id="upload-bg-button" class="ui icon button interactable">
-                                <i class="fa fa-plus"></i>
-                            </div>
                         </div>
                     </div>
                     <div class="tab-content" data-tab="export" style="display: none;">
@@ -140,8 +147,7 @@
                                 <span id="shuffle" class="fa fa-random action interactable" onClick="Database.toggleShuffle()"></span>
                             </div>
                             <span id="time" class="time">00:00</span>
-                            <progress id="progressbar" class="flex-auto interactable" value="0" max="100"></progress>
-                            <span id="mute" class="fa fa-volume-up interactable"></span>
+                            <progress id="progressbar" class="flex-auto interactable" value="0" max="100"></progress>							<span id="mute" class="fa fa-volume-up interactable"></span>
                             <progress id="volume" class="flex-auto interactable" value="100" max="100"></progress>
                         </div>
                         <audio id="audio" onended="Database.playNextSong()"></audio>

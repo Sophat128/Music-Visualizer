@@ -1,4 +1,4 @@
-
+// LAST UPDATE: 2024-05-21-1430
 let GuiWrapper = new function() {
 
     this.isOpen = false;
@@ -37,6 +37,31 @@ let GuiWrapper = new function() {
             var name = e.target.files[0].name;
             $("input:text", $(e.target).parent()).val(name);
         });
+
+        $("#settingsAudioFileSelector").on("change", function(e) {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                $("#audio").attr("src", e.target.result);
+                AudioWrap.togglePlaying();
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        $("#settingsBgImageSelector").on("change", function(e) {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                Background.setCustomBackground(e.target.result);
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        $("#settingsEmblemImageSelector").on("change", function(e) {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                Emblem.setEmblem(e.target.result);
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        });
     }
 
     let hideOverlay = function() {
@@ -66,8 +91,8 @@ let GuiWrapper = new function() {
     }
 
     this.updatePlayBtn = function() {
-        $("#play").toggleClass("fa-play", $("audio").paused);
-        $("#play").toggleClass("fa-pause", !$("audio").paused);
+        $("#play").toggleClass("fa-play", $("audio").get(0).paused);
+        $("#play").toggleClass("fa-pause", !$("audio").get(0).paused);
     }
 
     this.toggleTextField = function(element) {
