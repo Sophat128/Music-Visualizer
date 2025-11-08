@@ -1,0 +1,13 @@
+{
+  "name": "music-visualizer-video-server",
+  "version": "1.0.0",
+  "description": "Local server for video conversion",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "busboy": "^1.6.0"
+  }
+}

@@ -110,6 +110,10 @@ body {
     color: #fff !important;
 }
 
+.settings-content .ui.icon.button .fa {
+    margin-right: 10px;
+}
+
 .visual-preview .lazyaf, .visual-preview .realbg {
     position: absolute;
     width: 100%;
@@ -139,6 +143,46 @@ body {
     transform: scale(1.02);
 }
 
+/* Export Tab Styles */
+.tab-content[data-tab="export"] h2 {
+    margin-bottom: 10px;
+}
+
+.tab-content[data-tab="export"] p {
+    font-size: 14px;
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.tab-content[data-tab="export"] .ui.form .field > label {
+    color: #fff;
+}
+
+.tab-content[data-tab="export"] .ui.form .field .ui.dropdown {
+    background-color: #333;
+    color: #fff;
+}
+
+.tab-content[data-tab="export"] .ui.form .field .ui.dropdown .menu {
+    background-color: #333;
+}
+
+.tab-content[data-tab="export"] .ui.form .field .ui.dropdown .menu .item {
+    color: #fff;
+}
+
+.tab-content[data-tab="export"] .ui.form .field input[type="number"] {
+    background-color: #333;
+    color: #fff;
+}
+
+.tab-content[data-tab="export"] .ui.form .field input[type="number"]::placeholder {
+    color: #888;
+}
+
+.tab-content[data-tab="export"] .ui.button {
+    margin-top: 20px;
+}
 .fa {
     padding: 10px;
 }

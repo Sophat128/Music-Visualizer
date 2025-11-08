@@ -116,8 +116,67 @@
                         </div>
                     </div>
                     <div class="tab-content" data-tab="export" style="display: none;">
-                        <h2>Export</h2>
-                        <p>Export your creation.</p>
+                        <h2>Export Settings</h2>
+                        <p>Customize how your final video will be recorded and rendered.</p>
+
+                        <div class="ui form inverted">
+                            <div class="field">
+                                <label>Resolution</label>
+                                <div class="ui selection dropdown">
+                                    <input type="hidden" name="resolution" value="1080p">
+                                    <i class="dropdown icon"></i>
+                                    <div class="default text">1080p for standard HD quality</div>
+                                    <div class="menu">
+                                        <div class="item" data-value="720p">720p for faster export and smaller files</div>
+                                        <div class="item" data-value="1080p">1080p for standard HD quality</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label>Frame Rate (FPS)</label>
+                                <div class="ui selection dropdown">
+                                    <input type="hidden" name="fps" value="60">
+                                    <i class="dropdown icon"></i>
+                                    <div class="default text">60 FPS for smoother and more responsive visual effects</div>
+                                    <div class="menu">
+                                        <div class="item" data-value="30">30 FPS for standard motion</div>
+                                        <div class="item" data-value="60">60 FPS for smoother and more responsive visual effects</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label>Audio Quality</label>
+                                <div class="ui selection dropdown">
+                                    <input type="hidden" name="audio-quality" value="320kbps">
+                                    <i class="dropdown icon"></i>
+                                    <div class="default text">320 kbps MP3/AAC is recommended</div>
+                                    <div class="menu">
+                                        <div class="item" data-value="192kbps">192 kbps for good quality</div>
+                                        <div class="item" data-value="320kbps">320 kbps for high-quality music playback</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label>Format</label>
+                                <div class="ui selection dropdown">
+                                    <input type="hidden" name="format" value="mp4">
+                                    <i class="dropdown icon"></i>
+                                    <div class="default text">MP4</div>
+                                    <div class="menu">
+                                        <div class="item" data-value="mp4">MP4 (H.264 + AAC) offers the best compatibility</div>
+                                        <div class="item" data-value="mov">MOV is suitable for professional editing</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="ui divider"></div>
+
+                            <button class="ui button green" id="export-button">Export Video</button>
+                            <div id="export-status" style="display: none; margin-top: 15px;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -147,7 +206,8 @@
                                 <span id="shuffle" class="fa fa-random action interactable" onClick="Database.toggleShuffle()"></span>
                             </div>
                             <span id="time" class="time">00:00</span>
-                            <progress id="progressbar" class="flex-auto interactable" value="0" max="100"></progress>							<span id="mute" class="fa fa-volume-up interactable"></span>
+                            <progress id="progressbar" class="flex-auto interactable" value="0" max="100"></progress>
+                            <span id="mute" class="fa fa-volume-up interactable"></span>
                             <progress id="volume" class="flex-auto interactable" value="100" max="100"></progress>
                         </div>
                         <audio id="audio" onended="Database.playNextSong()"></audio>
@@ -160,14 +220,112 @@
         $(document).ready(function() {
             $('.tabs .tab').on('click', function() {
                 var tabName = $(this).data('tab');
-
-                // Deactivate all tabs and content
                 $('.tabs .tab').removeClass('active');
                 $('.settings-content .tab-content').hide();
-
-                // Activate the clicked tab and its content
                 $(this).addClass('active');
-                $('.settings-content .tab-content[data-tab="' + tabName + '"]').show();
+                $('.settings-content .tab-content[data-tab="'+tabName+'"]').show();
+            });
+
+            $('.ui.dropdown').dropdown();
+
+            // --- Automated MediaRecorder Logic ---
+            let mediaRecorder;
+            let recordedChunks = [];
+            let isExporting = false;
+
+            const exportBtn = $('#export-button');
+            const statusDiv = $('#export-status');
+
+            exportBtn.on('click', async function() {
+                if (isExporting) return; // Prevent multiple clicks
+
+                const audio = $('#audio')[0];
+                if (!audio.src) {
+                    statusDiv.text('Please load a song before exporting.').show();
+                    return;
+                }
+
+                isExporting = true;
+                exportBtn.addClass('loading disabled').text('Exporting...');
+                statusDiv.text('Recording in progress. Please wait for the song to finish.').show();
+
+                const canvas = $('#canvas')[0];
+                const audioContext = Nodes.getContext();
+                const source = Nodes.getMediaSource();
+
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                const dest = audioContext.createMediaStreamDestination();
+                source.connect(dest);
+                
+                const fps = parseInt($('[name="fps"]').val(), 10) || 30;
+                const canvasStream = canvas.captureStream(fps);
+                const combinedStream = new MediaStream([...canvasStream.getTracks(), ...dest.stream.getTracks()]);
+
+                mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
+                recordedChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const formData = new FormData();
+                    formData.append('video', blob, 'upload.webm');
+                    formData.append('resolution', $('[name="resolution"]').val());
+                    formData.append('fps', $('[name="fps"]').val());
+                    formData.append('audioQuality', $('[name="audio-quality"]').val());
+                    formData.append('format', $('[name="format"]').val());
+
+                    statusDiv.text('Uploading and converting... This may take a moment.').show();
+
+                    try {
+                        const response = await fetch('http://localhost:8080/export-video', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || 'Conversion failed.');
+                        }
+
+                        const fileBlob = await response.blob();
+                        const downloadUrl = URL.createObjectURL(fileBlob);
+                        const format = $('[name="format"]').val().toUpperCase();
+                        statusDiv.html(`Conversion successful! <a href="${downloadUrl}" download="export.${format.toLowerCase()}" class="ui button compact primary">Download ${format}</a>`);
+
+                    } catch (error) {
+                        statusDiv.text('Error: ' + error.message).show();
+                        console.error('Export failed:', error);
+                    } finally {
+                        isExporting = false;
+                        exportBtn.removeClass('loading disabled').addClass('green').text('Export Video');
+                        source.disconnect(dest);
+                        // Restore the original onended behavior for playlists
+                        audio.onended = function() { Database.playNextSong(); };
+                    }
+                };
+                
+                // --- Automation Magic ---
+                // 1. Hijack the 'onended' event to stop the recording
+                audio.onended = function() {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop(); // This will trigger the 'onstop' event handler above
+                    }
+                };
+
+                // 2. Start the recorder
+                mediaRecorder.start();
+
+                // 3. Rewind and Play the audio
+                audio.currentTime = 0;
+                audio.play();
             });
         });
         </script>
