@@ -273,44 +273,91 @@
                     }
                 };
 
+                // mediaRecorder.onstop = async () => {
+                //     const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                //     const formData = new FormData();
+                //     formData.append('video', blob, 'upload.webm');
+                //     formData.append('resolution', $('[name="resolution"]').val());
+                //     formData.append('fps', $('[name="fps"]').val());
+                //     formData.append('audioQuality', $('[name="audio-quality"]').val());
+                //     formData.append('format', $('[name="format"]').val());
+
+                //     statusDiv.text('Uploading and converting... This may take a moment.').show();
+
+                //     try {
+                //         const response = await fetch('http://localhost:8080/export-video', {
+                //             method: 'POST',
+                //             body: formData
+                //         });
+
+                //         if (!response.ok) {
+                //             const errorData = await response.json();
+                //             throw new Error(errorData.error || 'Conversion failed.');
+                //         }
+
+                //         const fileBlob = await response.blob();
+                //         const downloadUrl = URL.createObjectURL(fileBlob);
+                //         const format = $('[name="format"]').val().toUpperCase();
+                //         statusDiv.html(`Conversion successful! <a href="${downloadUrl}" download="export.${format.toLowerCase()}" class="ui button compact primary">Download ${format}</a>`);
+
+                //     } catch (error) {
+                //         statusDiv.text('Error: ' + error.message).show();
+                //         console.error('Export failed:', error);
+                //     } finally {
+                //         isExporting = false;
+                //         exportBtn.removeClass('loading disabled').addClass('green').text('Export Video');
+                //         source.disconnect(dest);
+                //         // Restore the original onended behavior for playlists
+                //         audio.onended = function() { Database.playNextSong(); };
+                //     }
+                // };
+
                 mediaRecorder.onstop = async () => {
-                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                    const formData = new FormData();
-                    formData.append('video', blob, 'upload.webm');
-                    formData.append('resolution', $('[name="resolution"]').val());
-                    formData.append('fps', $('[name="fps"]').val());
-                    formData.append('audioQuality', $('[name="audio-quality"]').val());
-                    formData.append('format', $('[name="format"]').val());
+    const blob = new Blob(recordedChunks, { type: 'video/webm;codecs=vp9' });
+    const formData = new FormData();
+    formData.append('video', blob, 'upload.webm');
+    formData.append('resolution', $('[name="resolution"]').val());
+    formData.append('fps', $('[name="fps"]').val());
+    formData.append('audioQuality', $('[name="audio-quality"]').val());
+    formData.append('format', $('[name="format"]').val());
 
-                    statusDiv.text('Uploading and converting... This may take a moment.').show();
+    statusDiv.text('Uploading and converting... This may take a moment.').show();
 
-                    try {
-                        const response = await fetch('http://localhost:8080/export-video', {
-                            method: 'POST',
-                            body: formData
-                        });
+    try {
+        const response = await fetch('http://localhost:8080/export-video', {
+            method: 'POST',
+            body: formData
+        });
 
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.error || 'Conversion failed.');
-                        }
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Conversion failed.');
+        }
 
-                        const fileBlob = await response.blob();
-                        const downloadUrl = URL.createObjectURL(fileBlob);
-                        const format = $('[name="format"]').val().toUpperCase();
-                        statusDiv.html(`Conversion successful! <a href="${downloadUrl}" download="export.${format.toLowerCase()}" class="ui button compact primary">Download ${format}</a>`);
+        const fileBlob = await response.blob();
+        const downloadUrl = URL.createObjectURL(fileBlob);
+        const format = $('[name="format"]').val().toLowerCase();
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `export.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(downloadUrl);
 
-                    } catch (error) {
-                        statusDiv.text('Error: ' + error.message).show();
-                        console.error('Export failed:', error);
-                    } finally {
-                        isExporting = false;
-                        exportBtn.removeClass('loading disabled').addClass('green').text('Export Video');
-                        source.disconnect(dest);
-                        // Restore the original onended behavior for playlists
-                        audio.onended = function() { Database.playNextSong(); };
-                    }
-                };
+        statusDiv.html(`Conversion successful! <a href="${downloadUrl}" download="export.${format}" class="ui button compact primary">Download ${format.toUpperCase()}</a>`);
+
+    } catch (error) {
+        statusDiv.text('Error: ' + error.message).show();
+        console.error('Export failed:', error);
+    } finally {
+        isExporting = false;
+        exportBtn.removeClass('loading disabled').addClass('green').text('Export Video');
+        source.disconnect(dest);
+        audio.onended = function() { Database.playNextSong(); };
+    }
+};
+
                 
                 // --- Automation Magic ---
                 // 1. Hijack the 'onended' event to stop the recording

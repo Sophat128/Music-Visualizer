@@ -7,7 +7,7 @@ const { spawn } = require("child_process");
 
 const app = express();
 
-// CORS middleware
+// --- CORS middleware ---
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -16,6 +16,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// --- Export video route ---
 app.post("/export-video", (req, res) => {
   const bb = busboy({ headers: req.headers });
   const tmpdir = os.tmpdir();
@@ -23,7 +24,7 @@ app.post("/export-video", (req, res) => {
   const fields = {};
   const fileWrites = [];
 
-  // Save uploaded files to temp directory
+  // --- Save uploaded files ---
   bb.on("file", (name, file, info) => {
     const filepath = path.join(tmpdir, info.filename || `upload-${Date.now()}`);
     files[name] = filepath;
@@ -38,7 +39,7 @@ app.post("/export-video", (req, res) => {
     fileWrites.push(promise);
   });
 
-  // Capture any extra fields (resolution, fps, audioQuality)
+  // --- Capture form fields ---
   bb.on("field", (name, val) => fields[name] = val);
 
   bb.on("finish", async () => {
@@ -56,8 +57,9 @@ app.post("/export-video", (req, res) => {
       const resolution = fields.resolution === "1080p" ? "1920:1080" : "1280:720";
       const audioBitrate = fields.audioQuality ? fields.audioQuality.replace("kbps", "k") : '192k';
 
-      // Build FFmpeg arguments
+      // --- Build FFmpeg arguments ---
       const ffmpegArgs = [
+        "-y", // overwrite if file exists
         "-i", videoPath,
         "-vf", `scale=${resolution}:force_original_aspect_ratio=decrease,pad=${resolution}:(ow-iw)/2:(oh-ih)/2`,
         "-r", fields.fps || "30",
@@ -79,33 +81,47 @@ app.post("/export-video", (req, res) => {
 
       ffmpegProcess.on("close", (code) => {
         if (code === 0) {
-          // Send MP4 file for download
-          res.download(outputPath, outputFileName, (err) => {
-            // Cleanup
+          console.log("FFmpeg finished successfully");
+
+          // --- Stream MP4 back to browser ---
+          const fileStream = fs.createReadStream(outputPath);
+          res.setHeader('Content-Type', 'video/mp4');
+          res.setHeader('Content-Disposition', `attachment; filename="${outputFileName}"`);
+
+          fileStream.pipe(res);
+
+          fileStream.on('close', () => {
+            // --- Clean up temporary files ---
             fs.unlinkSync(outputPath);
             Object.values(files).forEach(fp => fs.unlinkSync(fp));
           });
+
         } else {
           console.error(`FFmpeg exited with code ${code}`);
           res.status(500).json({ error: `FFmpeg exited with code ${code}` });
+          // Cleanup
+          if (outputPath && fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+          Object.values(files).forEach(fp => { if (fs.existsSync(fp)) fs.unlinkSync(fp); });
         }
       });
 
       ffmpegProcess.on("error", (err) => {
         console.error("FFmpeg error:", err);
         res.status(500).json({ error: err.message });
+        if (outputPath && fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+        Object.values(files).forEach(fp => { if (fs.existsSync(fp)) fs.unlinkSync(fp); });
       });
 
     } catch (err) {
       console.error("Export error:", err);
       res.status(500).json({ error: err.message });
-      // Cleanup on error
-      if (videoPath) fs.unlink(videoPath, ()=>{});
-      if (outputPath) fs.unlink(outputPath, ()=>{});
+      if (videoPath && fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+      if (outputPath && fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
     }
   });
 
-  req.pipe(bb);;
+  req.pipe(bb);
 });
 
+// --- Start server ---
 app.listen(8080, () => console.log("Local video export server running on http://localhost:8080"));
