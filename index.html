@@ -183,14 +183,6 @@
             <div class="visualizer-container">
                 <div class="aspect-ratio-container">
                     <div class="visual-preview">
-                        <div id="background" class="lazyaf">
-                            <img src="" class="bgleft" id="limg1" onerror="this.style.display='none'">
-                            <img src="" class="bgright" id="limg2" onerror="this.style.display='none'">
-                        </div>
-                        <div id="background" class="realbg">
-                            <img src="" class="bgleft" id="bgimg1" onload="Background.fadeFullRes(this)" onerror="this.style.display='none'">
-                            <img src="" class="bgright" id="bgimg2" onload="Background.fadeFullRes(this)" onerror="this.style.display='none'">
-                        </div>
                         <div id="content">
                             <canvas id="canvas" style="display: block;"></canvas>
                         </div>
@@ -272,45 +264,6 @@
                         recordedChunks.push(event.data);
                     }
                 };
-
-                // mediaRecorder.onstop = async () => {
-                //     const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                //     const formData = new FormData();
-                //     formData.append('video', blob, 'upload.webm');
-                //     formData.append('resolution', $('[name="resolution"]').val());
-                //     formData.append('fps', $('[name="fps"]').val());
-                //     formData.append('audioQuality', $('[name="audio-quality"]').val());
-                //     formData.append('format', $('[name="format"]').val());
-
-                //     statusDiv.text('Uploading and converting... This may take a moment.').show();
-
-                //     try {
-                //         const response = await fetch('http://localhost:8080/export-video', {
-                //             method: 'POST',
-                //             body: formData
-                //         });
-
-                //         if (!response.ok) {
-                //             const errorData = await response.json();
-                //             throw new Error(errorData.error || 'Conversion failed.');
-                //         }
-
-                //         const fileBlob = await response.blob();
-                //         const downloadUrl = URL.createObjectURL(fileBlob);
-                //         const format = $('[name="format"]').val().toUpperCase();
-                //         statusDiv.html(`Conversion successful! <a href="${downloadUrl}" download="export.${format.toLowerCase()}" class="ui button compact primary">Download ${format}</a>`);
-
-                //     } catch (error) {
-                //         statusDiv.text('Error: ' + error.message).show();
-                //         console.error('Export failed:', error);
-                //     } finally {
-                //         isExporting = false;
-                //         exportBtn.removeClass('loading disabled').addClass('green').text('Export Video');
-                //         source.disconnect(dest);
-                //         // Restore the original onended behavior for playlists
-                //         audio.onended = function() { Database.playNextSong(); };
-                //     }
-                // };
 
                 mediaRecorder.onstop = async () => {
     const blob = new Blob(recordedChunks, { type: 'video/webm;codecs=vp9' });

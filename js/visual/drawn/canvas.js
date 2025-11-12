@@ -53,6 +53,12 @@ let Canvas = new function() {
 
     let clearCallback = function() {
         Canvas.context.clearRect(0, 0, Canvas.canvas.width, Canvas.canvas.height);
+
+        let bgImage = Background.getBackgroundImage();
+        if (bgImage) {
+            Canvas.context.drawImage(bgImage, 0, 0, Canvas.canvas.width, Canvas.canvas.height);
+        }
+
         Canvas.context.drawImage(Renderer.getCanvas(), 0, 0);
     }
 
