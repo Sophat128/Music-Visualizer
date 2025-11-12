@@ -8,7 +8,6 @@ let Renderer = new function() {
     this.setUp = function() {
         renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.domElement.id = "canvas-gl";
-        $("#content").append(renderer.domElement);
 
         let self = this;
         $(window).on('resize', function() {
@@ -17,6 +16,10 @@ let Renderer = new function() {
 
         this.updateSize();
         requestAnimationFrame(render);
+    }
+
+    this.getCanvas = function() {
+        return renderer.domElement;
     }
 
     let render = function() {

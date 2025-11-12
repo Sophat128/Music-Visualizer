@@ -53,6 +53,7 @@ let Canvas = new function() {
 
     let clearCallback = function() {
         Canvas.context.clearRect(0, 0, Canvas.canvas.width, Canvas.canvas.height);
+        Canvas.context.drawImage(Renderer.getCanvas(), 0, 0);
     }
 
     let shakeCallback = function(_, multiplier) {
