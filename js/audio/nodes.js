@@ -67,6 +67,10 @@ const Nodes = (function () {
             return mediaSource;
         },
 
+        getAnalyser: function() {
+            return analyzer;
+        },
+
         playSong: function (song, url) {
             try {
                 if (context.state === "suspended") {
@@ -108,6 +112,60 @@ const Nodes = (function () {
 
         setVolume: function (volume) {
             gainNode.gain.value = (Math.exp(volume) - 1) / (Math.E - 1) - 1;
+        },
+
+        getOfflineFrequencyData: function(audioFile, fps, duration) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const arrayBuffer = e.target.result;
+                    const offlineContext = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, Math.ceil(duration * 44100), 44100);
+
+                    offlineContext.decodeAudioData(arrayBuffer, (buffer) => {
+                        const source = offlineContext.createBufferSource();
+                        source.buffer = buffer;
+
+                        const analyser = offlineContext.createAnalyser();
+                        analyser.fftSize = Config.fftSize;
+                        analyser.smoothingTimeConstant = 0;
+                        analyser.minDecibels = Config.minDecibels;
+                        analyser.maxDecibels = Config.maxDecibels;
+
+                        const scriptProcessor = offlineContext.createScriptProcessor(2048, 1, 1);
+                        
+                        source.connect(analyser);
+                        analyser.connect(scriptProcessor);
+                        scriptProcessor.connect(offlineContext.destination);
+                        
+                        const collectedFrames = [];
+                        scriptProcessor.onaudioprocess = () => {
+                            const array = new Uint8Array(analyser.frequencyBinCount);
+                            analyser.getByteFrequencyData(array);
+                            collectedFrames.push(array.slice(0));
+                        };
+
+                        source.start(0);
+
+                        offlineContext.startRendering().then(() => {
+                            const frameCount = Math.floor(duration * fps);
+                            const resampledFrames = [];
+                            const totalAudioFrames = collectedFrames.length;
+                            for (let i = 0; i < frameCount; i++) {
+                                const time = i / fps;
+                                const audioFrameIndex = Math.floor((time / duration) * totalAudioFrames);
+                                if(collectedFrames[audioFrameIndex]){
+                                    resampledFrames.push(collectedFrames[audioFrameIndex]);
+                                } else {
+                                    resampledFrames.push(new Uint8Array(analyser.frequencyBinCount));
+                                }
+                            }
+                            resolve(resampledFrames);
+                        }).catch(reject);
+
+                    }, reject);
+                };
+                reader.readAsArrayBuffer(audioFile);
+            });
         }
     };
 })();

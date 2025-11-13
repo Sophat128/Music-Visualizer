@@ -220,16 +220,11 @@
 
             $('.ui.dropdown').dropdown();
 
-            // --- Automated MediaRecorder Logic ---
-            let mediaRecorder;
-            let recordedChunks = [];
-            let isExporting = false;
-
             const exportBtn = $('#export-button');
             const statusDiv = $('#export-status');
 
             exportBtn.on('click', async function() {
-                if (isExporting) return; // Prevent multiple clicks
+                if ($(this).hasClass('loading')) return;
 
                 const audio = $('#audio')[0];
                 if (!audio.src) {
@@ -237,95 +232,18 @@
                     return;
                 }
 
-                isExporting = true;
-                exportBtn.addClass('loading disabled').text('Exporting...');
-                statusDiv.text('Recording in progress. Please wait for the song to finish.').show();
+                $(this).addClass('loading disabled').text('Exporting...');
+                statusDiv.text('Rendering frames...').show();
 
-                const canvas = $('#canvas')[0];
-                const audioContext = Nodes.getContext();
-                const source = Nodes.getMediaSource();
-
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
+                try {
+                    await Main.exportOfflineVideo();
+                    statusDiv.text('Export complete! Check your downloads.').show();
+                } catch (error) {
+                    statusDiv.text('Error: ' + error.message).show();
+                    console.error('Export failed:', error);
+                } finally {
+                    $(this).removeClass('loading disabled').addClass('green').text('Export Video');
                 }
-
-                const dest = audioContext.createMediaStreamDestination();
-                source.connect(dest);
-                
-                const fps = parseInt($('[name="fps"]').val(), 10) || 30;
-                const canvasStream = canvas.captureStream(fps);
-                const combinedStream = new MediaStream([...canvasStream.getTracks(), ...dest.stream.getTracks()]);
-
-                mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
-                recordedChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstop = async () => {
-    const blob = new Blob(recordedChunks, { type: 'video/webm;codecs=vp9' });
-    const formData = new FormData();
-    formData.append('video', blob, 'upload.webm');
-    formData.append('resolution', $('[name="resolution"]').val());
-    formData.append('fps', $('[name="fps"]').val());
-    formData.append('audioQuality', $('[name="audio-quality"]').val());
-    formData.append('format', $('[name="format"]').val());
-
-    statusDiv.text('Uploading and converting... This may take a moment.').show();
-
-    try {
-        const response = await fetch('http://localhost:8080/export-video', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || 'Conversion failed.');
-        }
-
-        const fileBlob = await response.blob();
-        const downloadUrl = URL.createObjectURL(fileBlob);
-        const format = $('[name="format"]').val().toLowerCase();
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = `export.${format}`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(downloadUrl);
-
-        statusDiv.html(`Conversion successful! <a href="${downloadUrl}" download="export.${format}" class="ui button compact primary">Download ${format.toUpperCase()}</a>`);
-
-    } catch (error) {
-        statusDiv.text('Error: ' + error.message).show();
-        console.error('Export failed:', error);
-    } finally {
-        isExporting = false;
-        exportBtn.removeClass('loading disabled').addClass('green').text('Export Video');
-        source.disconnect(dest);
-        audio.onended = function() { Database.playNextSong(); };
-    }
-};
-
-                
-                // --- Automation Magic ---
-                // 1. Hijack the 'onended' event to stop the recording
-                audio.onended = function() {
-                    if (mediaRecorder && mediaRecorder.state === 'recording') {
-                        mediaRecorder.stop(); // This will trigger the 'onstop' event handler above
-                    }
-                };
-
-                // 2. Start the recorder
-                mediaRecorder.start();
-
-                // 3. Rewind and Play the audio
-                audio.currentTime = 0;
-                audio.play();
             });
         });
         </script>

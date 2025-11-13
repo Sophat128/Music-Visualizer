@@ -26,7 +26,8 @@ app.post("/export-video", (req, res) => {
 
   // --- Save uploaded files ---
   bb.on("file", (name, file, info) => {
-    const filepath = path.join(tmpdir, info.filename || `upload-${Date.now()}`);
+    const safeFilename = info.filename ? info.filename.replace(/[^a-z0-9.]/gi, '_').toLowerCase() : `upload-${Date.now()}`;
+    const filepath = path.join(tmpdir, safeFilename);
     files[name] = filepath;
 
     const writeStream = fs.createWriteStream(filepath);
@@ -43,12 +44,15 @@ app.post("/export-video", (req, res) => {
   bb.on("field", (name, val) => fields[name] = val);
 
   bb.on("finish", async () => {
-    let videoPath, outputPath;
+    let videoPath, audioPath, outputPath;
     try {
       await Promise.all(fileWrites);
 
       videoPath = files["video"];
+      audioPath = files["audio"];
+
       if (!videoPath) return res.status(400).json({ error: "No video uploaded" });
+      if (!audioPath) return res.status(400).json({ error: "No audio uploaded" });
 
       const outputFormat = fields.format || "mp4";
       const outputFileName = `export-${Date.now()}.${outputFormat}`;
@@ -60,7 +64,8 @@ app.post("/export-video", (req, res) => {
       // --- Build FFmpeg arguments ---
       const ffmpegArgs = [
         "-y", // overwrite if file exists
-        "-i", videoPath,
+        "-i", videoPath, // Input 0: silent video
+        "-i", audioPath, // Input 1: audio file
         "-vf", `scale=${resolution}:force_original_aspect_ratio=decrease,pad=${resolution}:(ow-iw)/2:(oh-ih)/2`,
         "-r", fields.fps || "30",
         "-c:v", "libx264",
@@ -68,7 +73,10 @@ app.post("/export-video", (req, res) => {
         "-crf", "22",
         "-c:a", "aac",
         "-b:a", audioBitrate,
+        "-map", "0:v:0",
+        "-map", "1:a:0",
         "-pix_fmt", "yuv420p",
+        "-shortest",
         outputPath
       ];
 
@@ -115,7 +123,7 @@ app.post("/export-video", (req, res) => {
     } catch (err) {
       console.error("Export error:", err);
       res.status(500).json({ error: err.message });
-      if (videoPath && fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+      Object.values(files).forEach(fp => { if (fp && fs.existsSync(fp)) fs.unlinkSync(fp); });
       if (outputPath && fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
     }
   });
